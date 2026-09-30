@@ -3,4 +3,4 @@ logs
 sovereignenv
 .env
 */__pycache__
-README.md
+installation.md
