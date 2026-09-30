@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-do
 import Dashboard from './pages/Dashboard'
 import Models from './pages/Models'
 import Knowledge from './pages/Knowledge'
+import Chat from './pages/Chat'
 import Agent from './pages/Agent'
 import Artifacts from './pages/Artifacts'
 import Admin from './pages/Admin'
@@ -9,6 +10,7 @@ import {
   LayoutDashboard,
   Cpu,
   BookOpen,
+  MessageSquare,
   BotMessageSquare,
   FileDown,
   ShieldCheck,
@@ -17,6 +19,7 @@ import {
 const NAV = [
   { to: '/',          label: 'Dashboard',  Icon: LayoutDashboard },
   { to: '/models',    label: 'Models',     Icon: Cpu },
+  { to: '/chat',      label: 'Chat',       Icon: MessageSquare },
   { to: '/knowledge', label: 'Knowledge',  Icon: BookOpen },
   { to: '/agent',     label: 'Agent',      Icon: BotMessageSquare },
   { to: '/artifacts', label: 'Artifacts',  Icon: FileDown },
@@ -135,6 +138,7 @@ function Header({ title }: { title: string }) {
 const PAGE_TITLES: Record<string, string> = {
   '/':          'Dashboard',
   '/models':    'Models',
+  '/chat':      'Chat',
   '/knowledge': 'Knowledge Base',
   '/agent':     'Agent',
   '/artifacts': 'Artifacts',
@@ -153,6 +157,7 @@ function Main() {
         <Routes>
           <Route path="/"          element={<Dashboard />} />
           <Route path="/models"    element={<Models />} />
+          <Route path="/chat"      element={<Chat />} />
           <Route path="/knowledge" element={<Knowledge />} />
           <Route path="/agent"     element={<Agent />} />
           <Route path="/artifacts" element={<Artifacts />} />
