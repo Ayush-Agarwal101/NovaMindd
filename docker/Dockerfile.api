@@ -1,0 +1,28 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libmagic1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies first (layer caching)
+COPY pyproject.toml ./
+RUN pip install -e ".[dev]" || pip install --no-cache-dir \
+    fastapi uvicorn[standard] pydantic pydantic-settings \
+    httpx anyio python-jose[cryptography] passlib[bcrypt] python-multipart \
+    sqlalchemy[asyncio] asyncpg alembic pgvector \
+    rank-bm25 sentence-transformers \
+    pymupdf python-docx openpyxl python-pptx \
+    langchain-core langgraph orjson pyyaml python-dotenv \
+    structlog docker
+
+# Copy source
+COPY apps/ ./apps/
+COPY core/ ./core/
+COPY configs/ ./configs/
+
+EXPOSE 8000
+
+CMD ["uvicorn", "apps.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

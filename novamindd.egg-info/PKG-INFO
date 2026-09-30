@@ -1,0 +1,219 @@
+Metadata-Version: 2.4
+Name: novamindd
+Version: 0.1.0
+Summary: Sovereign local-first AI execution platform for confidential industrial workflows
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.111.0
+Requires-Dist: uvicorn[standard]>=0.29.0
+Requires-Dist: pydantic>=2.7.0
+Requires-Dist: pydantic-settings>=2.2.0
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: anyio>=4.3.0
+Requires-Dist: python-jose[cryptography]>=3.3.0
+Requires-Dist: passlib[bcrypt]>=1.7.4
+Requires-Dist: python-multipart>=0.0.9
+Requires-Dist: sqlalchemy[asyncio]>=2.0.30
+Requires-Dist: asyncpg>=0.29.0
+Requires-Dist: alembic>=1.13.0
+Requires-Dist: pgvector>=0.2.5
+Requires-Dist: rank-bm25>=0.2.2
+Requires-Dist: sentence-transformers>=3.0.0
+Requires-Dist: pymupdf>=1.24.0
+Requires-Dist: python-docx>=1.1.0
+Requires-Dist: openpyxl>=3.1.2
+Requires-Dist: python-pptx>=0.6.23
+Requires-Dist: langgraph>=0.1.0
+Requires-Dist: langchain-core>=0.2.0
+Requires-Dist: orjson>=3.10.0
+Requires-Dist: pyyaml>=6.0.1
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: structlog>=24.1.0
+Requires-Dist: docker>=7.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.2.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
+Requires-Dist: pytest-cov>=5.0.0; extra == "dev"
+Requires-Dist: httpx>=0.27.0; extra == "dev"
+Requires-Dist: mypy>=1.10.0; extra == "dev"
+Requires-Dist: ruff>=0.4.0; extra == "dev"
+
+# NovaMindd
+
+> **A sovereign, local-first AI execution platform for confidential industrial workflows.**
+
+NovaMindd is an AI workbench designed for environments where sensitive documents, internal knowledge, engineering workflows, and AI-generated actions must remain under organisational control.
+
+> **The model provides intelligence. NovaMindd provides authority.**
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.11+
+- [Ollama](https://ollama.ai) running locally (`ollama serve`)
+- Docker (for sandbox execution)
+- PostgreSQL with pgvector (or use Docker Compose)
+
+### 1. Install dependencies
+
+```bash
+pip install -e ".[dev]"
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+# Edit .env — set SECRET_KEY, DATABASE_URL, OLLAMA_BASE_URL
+```
+
+### 3. Pull models into Ollama
+
+```bash
+ollama pull llama3.2:3b
+ollama pull llava:7b
+ollama pull deepseek-coder:6.7b
+```
+
+### 4. Build the sandbox image
+
+```bash
+python scripts/build_sandbox.py
+```
+
+### 5. Start with Docker Compose
+
+```bash
+docker-compose up
+```
+
+Or run the API directly in development mode:
+
+```bash
+python scripts/run_dev.py
+```
+
+API docs available at: `http://localhost:8000/api/v1/docs`
+
+---
+
+## Architecture
+
+```
+User / Operator
+      │
+      ▼
+NovaMindd API (FastAPI)
+      │
+      ▼
+Control Plane — Policy · RBAC · Routing · Residency · Validation
+      │
+      ├── Local Intelligence (Ollama LLM / VLM / Coding)
+      ├── Private Knowledge (BM25 + Vector + Reranking)
+      ├── Document AI (PyMuPDF + OCR + VLM)
+      ├── Tool Gateway → Docker Sandbox
+      └── Artifact Renderers (DOCX / XLSX / PPTX)
+            │
+            ▼
+      Provenance + Audit
+```
+
+---
+
+## Core Principles
+
+1. **Intelligence Is Not Authority** — The model proposes. The platform authorizes.
+2. **Least Privilege by Default** — Tools, files, credentials, and network access are explicitly authorized.
+3. **Fail Closed** — Insufficient evidence or failed validation stops the workflow.
+4. **Evidence Before Confidence** — Traceable evidence is preferred over fluent unsupported output.
+5. **Deterministic Where Possible** — LLMs handle reasoning; deterministic renderers handle artifacts.
+6. **Everything Important Is Observable** — Routing, execution, validation, and provenance are auditable.
+
+---
+
+## Project Structure
+
+```
+NovaMindd/
+├── apps/api/               FastAPI application + routes
+├── core/
+│   ├── config.py           Platform configuration
+│   ├── logging.py          Structured logging + audit
+│   ├── inference/          Model registry, router, residency, Ollama provider
+│   ├── retrieval/          BM25 + vector + hybrid retrieval engine
+│   ├── document_ai/        OCR + VLM document processing
+│   ├── control_plane/      Policy engine, RBAC, tool registry, validation
+│   ├── agents/             Tool gateway, agent planner
+│   ├── sandbox/            Docker sandbox executor
+│   ├── artifacts/          Document IR, DOCX/XLSX/PPTX renderers
+│   └── provenance/         Provenance and audit records
+├── models/registry/        Model manifests
+├── policies/               Tool, network, resource policies
+├── sandbox/images/         Sandbox Dockerfile
+├── scripts/                Dev utilities
+├── tests/
+│   ├── unit/               Unit tests (no external deps)
+│   ├── integration/        API integration tests
+│   ├── security/           Adversarial sandbox/policy tests
+│   └── evaluation/         Retrieval quality + provenance evaluation
+├── configs/config.yaml     Platform configuration
+├── docker-compose.yml
+└── pyproject.toml
+```
+
+---
+
+## Running Tests
+
+```bash
+# All unit tests (no Docker or Ollama required)
+pytest tests/unit/ -v
+
+# Integration tests (requires running API)
+pytest tests/integration/ -v
+
+# Security tests (requires Docker)
+pytest tests/security/ -v
+
+# Evaluation suite
+pytest tests/evaluation/ -v
+
+# Full suite
+pytest -v
+```
+
+---
+
+## Development Roadmap
+
+| Phase | Status |
+|-------|--------|
+| 1. Foundation | ✅ Complete |
+| 2. Local Inference | ✅ Complete |
+| 3. Knowledge Layer | ✅ Complete |
+| 4. Control Plane | ✅ Complete |
+| 5. Secure Execution | ✅ Complete |
+| 6. Agentic Workflows | ✅ Complete |
+| 7. Artifacts | ✅ Complete |
+| 8. Evaluation | ✅ Complete |
+
+---
+
+## Security Architecture
+
+- **Policy Engine** — Rule-based allow/deny/escalate for every action
+- **Tool Authorization** — Explicit role and permission checks per tool
+- **Docker Sandbox** — `--network=none`, read-only root FS, non-root UID, CPU/RAM limits
+- **Deny-by-Default Egress** — No outbound connections from generated code
+- **Credential Isolation** — No host environment variables in sandbox
+- **Audit Log** — Append-only JSONL audit trail for every policy decision and execution
+- **Provenance** — Every output traceable to evidence, model, tool actions, and validation steps
+
+---
+
+## License
+
+License to be defined.

@@ -1,0 +1,108 @@
+app:
+  name: NovaMindd
+  version: "0.1.0"
+  debug: false
+  log_level: INFO
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  prefix: "/api/v1"
+  cors_origins: ["http://localhost:3000"]
+
+auth:
+  secret_key: "${SECRET_KEY}"
+  algorithm: HS256
+  access_token_expire_minutes: 60
+
+database:
+  url: "${DATABASE_URL}"
+  pool_size: 10
+  max_overflow: 20
+  echo: false
+
+models:
+  - id: general-small
+    name: "llama3.2:3b"
+    provider: ollama
+    capabilities:
+      - reasoning
+      - text
+      - summarisation
+    vram_limit_mb: 4096
+    context_length: 8192
+    priority: 10
+
+  - id: vision-small
+    name: "llava:7b"
+    provider: ollama
+    capabilities:
+      - vision
+      - document_understanding
+      - ocr_assist
+    vram_limit_mb: 5120
+    context_length: 4096
+    priority: 20
+
+  - id: coding
+    name: "deepseek-coder:6.7b"
+    provider: ollama
+    capabilities:
+      - coding
+      - tool_generation
+      - analysis
+    vram_limit_mb: 5120
+    context_length: 16384
+    priority: 30
+
+residency:
+  max_vram_mb: 6144
+  unload_timeout_seconds: 300
+  preload_on_startup: []
+
+retrieval:
+  chunk_size: 512
+  chunk_overlap: 64
+  top_k_bm25: 20
+  top_k_vector: 20
+  top_k_rerank: 5
+  embedding_model: "all-MiniLM-L6-v2"
+  reranker_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+
+document_ai:
+  ocr_confidence_threshold: 0.85
+  max_pages: 500
+  extract_tables: true
+  extract_images: true
+
+policies:
+  network:
+    default: deny
+    allowed_destinations: []
+
+  filesystem:
+    host_mounts: false
+    writable_paths: ["/workspace"]
+    read_only_paths: ["/knowledge"]
+
+  execution:
+    non_root: true
+    cpu_limit: "1.0"
+    memory_limit_mb: 512
+    timeout_seconds: 60
+    max_output_size_bytes: 10485760
+
+  tools:
+    require_explicit_authorization: true
+    human_approval_required: []
+
+sandbox:
+  image: "novamindd-sandbox:latest"
+  network_mode: "none"
+  remove_on_exit: true
+
+audit:
+  enabled: true
+  log_to_file: true
+  log_path: "logs/audit.jsonl"
+  include_request_body: false

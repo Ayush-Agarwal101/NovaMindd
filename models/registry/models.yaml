@@ -1,0 +1,53 @@
+---
+# NovaMindd Model Registry Manifest
+# Add model entries here; the platform loads this alongside config.yaml.
+
+models:
+  - id: general-small
+    name: "llama3.2:3b"
+    provider: ollama
+    capabilities:
+      - reasoning
+      - text
+      - summarisation
+    vram_limit_mb: 3500
+    context_length: 8192
+    priority: 10
+    notes: "Primary general-purpose reasoning model. Low VRAM footprint."
+
+  - id: general-medium
+    name: "llama3.1:8b"
+    provider: ollama
+    capabilities:
+      - reasoning
+      - text
+      - summarisation
+      - analysis
+    vram_limit_mb: 6000
+    context_length: 32768
+    priority: 20
+    notes: "Higher quality general reasoning. Requires 6 GB+ VRAM."
+
+  - id: vision-small
+    name: "llava:7b"
+    provider: ollama
+    capabilities:
+      - vision
+      - document_understanding
+      - ocr_assist
+    vram_limit_mb: 5000
+    context_length: 4096
+    priority: 15
+    notes: "Vision-Language Model for scanned documents and diagrams."
+
+  - id: coding
+    name: "deepseek-coder:6.7b"
+    provider: ollama
+    capabilities:
+      - coding
+      - tool_generation
+      - analysis
+    vram_limit_mb: 5000
+    context_length: 16384
+    priority: 30
+    notes: "Code generation and analysis. Used for sandboxed tool execution."

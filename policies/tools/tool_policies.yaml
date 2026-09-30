@@ -1,0 +1,40 @@
+---
+# NovaMindd Tool Policies
+# Defines per-tool authorisation rules beyond the defaults in the policy engine.
+
+tools:
+  python_exec:
+    enabled: true
+    allowed_roles:
+      - operator
+      - admin
+    requires_human_approval: false
+    network_access: false
+    notes: "Code execution in Docker sandbox. No network, read-only filesystem."
+
+  knowledge_search:
+    enabled: true
+    allowed_roles:
+      - viewer
+      - operator
+      - admin
+    requires_human_approval: false
+    network_access: false
+
+  document_ingest:
+    enabled: true
+    allowed_roles:
+      - operator
+      - admin
+    requires_human_approval: false
+    network_access: false
+    notes: "Document ingestion. Only trusted file types accepted."
+
+  # Example of a high-risk tool requiring human approval
+  external_api_call:
+    enabled: false
+    allowed_roles:
+      - admin
+    requires_human_approval: true
+    network_access: true
+    notes: "Disabled by default. Requires explicit admin activation and human approval per call."

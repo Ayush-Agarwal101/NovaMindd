@@ -1,0 +1,26 @@
+---
+# NovaMindd Network Egress Policy
+# All agent sandbox execution uses network_mode=none by default.
+# This file documents the intended deny-by-default posture.
+
+network:
+  default: deny
+
+  # Destinations that may be explicitly whitelisted for specific approved tools.
+  # Empty by default — no external network access from agent sandboxes.
+  allowed_destinations: []
+
+  # Internal endpoints reachable from the API service (not from sandboxes).
+  internal_endpoints:
+    - host: "localhost"
+      port: 11434
+      description: "Ollama local inference"
+    - host: "localhost"
+      port: 5432
+      description: "PostgreSQL database"
+
+notes: >
+  The Docker sandbox runs with --network=none.
+  No outbound connections from generated code are possible by default.
+  Enabling network access for any sandbox execution requires explicit policy
+  update AND human approval for the specific tool call.
