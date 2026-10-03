@@ -1,0 +1,80 @@
+========================================================================
+GENERATE AN STATEMENT OF PURPOSE FOR MANGESH BASED ON THE RESUME ATTACHED. THE …
+Author: NovaMindd Agent
+========================================================================
+
+
+## Task
+
+generate an statement of purpose for mangesh based on the resume attached. the sop is for admission in mit
+
+  • Request ID: 2f402164-3daa-4b08-b8a6-55fff9c14696
+  • Status: completed
+  • Generated: 2026-10-03 16:16 UTC
+  • Evidence sources: 6
+  • Tool calls: 0
+  • Models used: llava:7b, llama3.2:3b
+
+ANSWER
+------
+
+**Statement of Purpose for Mangesh Maurya**
+
+As a highly motivated and accomplished computer science graduate, I am excited to apply for admission to the Massachusetts Institute of Technology (MIT). With a strong academic record and diverse experience in AI engineering, backend development, and machine learning, I am confident that my skills and passion for innovation make me an ideal candidate for MIT's esteemed programs.
+
+**Academic Background**
+
+I hold a Bachelor of Technology degree in Computer Science and Engineering from the Institute of Engineering And Technology, Lucknow, with a CGPA of 8.71/10. Additionally, I completed my undergraduate studies at IIT Madras, where I earned a CGPA of 8.5/10. My academic achievements demonstrate my ability to excel in challenging environments and adapt to new technologies.
+
+**Professional Experience**
+
+As an AI Engineer Intern at Varcks Technologies, I designed and enhanced knowledge graph systems with over 50,000+ relationships, resulting in a 17% improvement in retrieval performance. I also built document ingestion pipelines for PDF, DOCX, and web-based knowledge sources, showcasing my expertise in backend development using Node.js, FastAPI, REST APIs, and databases like MongoDB and PostgreSQL.
+
+**Technical Skills**
+
+I possess proficiency in various programming languages, including Python, C++, JavaScript, and tools such as Git, GitHub, Linux, n8n, and others. My experience with machine learning and artificial intelligence is evident through projects such as the Transformer architecture from scratch in PyTorch without using high-level abstractions. I have trained and evaluated the architecture on a synthetic sequence task, verifying correct output shapes and gradient flow across encoder layers.
+
+**Personal Qualities**
+
+Beyond my technical skills, I am an active volunteer who participates in blood donation drives and awareness campaigns. I also teach academic subjects to underprivileged children as part of my volunteering activities, demonstrating my commitment to giving back to the community.
+
+**Why MIT?**
+
+I am drawn to MIT's rich history of innovation and its strong reputation for producing leaders in the tech industry. The university's emphasis on interdisciplinary research and collaboration aligns with my own interests and goals. I am excited about the opportunity to contribute to and learn from the vibrant MIT community, and I am confident that the university's resources and expertise will enable me to achieve my full potential.
+
+In conclusion, I believe that my academic background, professional experience, technical skills, and personal qualities make me a strong candidate for admission to MIT. I look forward to the opportunity to contribute to and learn from the MIT community, and I am excited about the prospect of pursuing my passion for innovation and technology at one of the world's leading institutions.
+
+REASONING STEPS
+---------------
+
+## Step 1 — Document_Understanding (llava:7b)
+
+Sub-step 2: Based on the extracted information, create a summary of Mangesh Maurya's qualifications, experiences, and accomplishments.
+
+Mangesh Maurya is a computer science graduate from IIT Madras with a CGPA of 8.5/10. He has also completed his B.Tech. in Computer Science and Engineering at the Institute of Engineering And Technology, Lucknow, with a CGPA of 8.71/10.
+
+Mangesh has experience as an AI Engineer Intern at Varcks Technologies, where he designed and enhanced knowledge graph systems with 50,000+ relationships, improving retrieval performance by 17%. He also built document ingestion pipelines for PDF, DOCX, and web-based knowledge sources.
+
+Mangesh has demonstrated proficiency in various programming languages such as Python, C++, JavaScript, and tools like Git, GitHub, Linux, n8n, and others. He is skilled in backend development using Node.js, FastAPI, REST APIs, and databases like MongoDB and PostgreSQL.
+
+Mangesh has also shown his expertise in machine learning and artificial intelligence through projects such as the Transformer architecture from scratch in PyTorch without using high-level abstractions. He has trained and evaluated the architecture on a synthetic sequence task, verifying correct output shapes and gradient flow across encoder layers.
+
+Mangesh is an active volunteer, participating in blood donation drives and awareness campaigns. He also teaches academic subjects to underprivileged children as part of his volunteering activities.
+
+## Step 2 — Summarisation (llama3.2:3b)
+
+TOOL_CALL: {"tool_id": "knowledge_search", "arguments": {"query": "Mangesh Maurya resume"}}
+
+## Step 3 — Text (llama3.2:3b)
+
+TOOL_CALL: {"tool_id": "python_exec", "arguments": {"code": "import numpy as np\nimport pandas as pd\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import accuracy_score\nimport matplotlib.pyplot as plt\n# Load the dataset\ndf = pd.read_csv("your_data.csv")\n# Split the data into training and testing sets\nX_train, X_test, y_train, y_test = train_test_split(df.drop("target", axis=1), df["target"], test_size=0.2, random_state=42)\n# Train a logistic regression model on the training data\nlr_model = LogisticRegression()\nlr_model.fit(X_train, y_train)\n# Make predictions on the testing data\ny_pred = lr_model.predict(X_test)\n# Evaluate the model using accuracy score\naccuracy = accuracy_score(y_test, y_pred)\nprint(f"Model Accuracy: {accuracy:.3f}")"}}
+
+========================================================================
+EVIDENCE REFERENCES
+========================================================================
+  a6a2e54bc250a744ecaad682  page 1  score 3.000
+  585e7873148722af33042598  page 1  score 2.000
+  5bd36e03f12b731dd23b4efc  page 1  score 1.000
+  5bd36e03f12b731dd23b4efc  page 1  score -7.488
+  a6a2e54bc250a744ecaad682  page 1  score -8.522
+  585e7873148722af33042598  page 1  score -8.522

@@ -40,12 +40,23 @@ export interface IngestResult {
   ocr_needed_pages: number[]
 }
 
+export interface SubStepInfo {
+  step_index: number
+  capability: string
+  model_id: string
+  model_name: string
+}
+
 export interface AgentRunResult {
   request_id: string | null
   status: string
   answer: string | null
   tool_calls: ToolCall[]
   evidence_count: number
+  files_ingested: number
+  sub_steps: SubStepInfo[]
+  output_files: Record<string, string>
+  download_urls: Record<string, string>
   error: string | null
 }
 
@@ -237,14 +248,21 @@ export async function runAgent(params: {
   user_id?: string
   user_roles?: string[]
   max_tool_calls?: number
+  files?: File[]
 }): Promise<AgentRunResult> {
-  const r = await api.post('/agents/run', {
-    task: params.task,
-    capability: params.capability ?? 'reasoning',
-    requires_vision: params.requires_vision ?? false,
-    user_id: params.user_id ?? 'web-user',
-    user_roles: params.user_roles ?? ['operator'],
-    max_tool_calls: params.max_tool_calls ?? 5,
+  // The backend now accepts multipart/form-data so we can attach files
+  const form = new FormData()
+  form.append('task', params.task)
+  form.append('capability', params.capability ?? 'reasoning')
+  form.append('requires_vision', String(params.requires_vision ?? false))
+  form.append('user_id', params.user_id ?? 'web-user')
+  form.append('user_roles', (params.user_roles ?? ['operator']).join(','))
+  form.append('max_tool_calls', String(params.max_tool_calls ?? 5))
+  for (const file of params.files ?? []) {
+    form.append('files', file)
+  }
+  const r = await api.post('/agents/run', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   })
   return r.data
 }

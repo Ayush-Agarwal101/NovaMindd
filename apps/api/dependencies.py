@@ -93,6 +93,8 @@ def get_tool_gateway() -> ToolGateway:
     return ToolGateway(
         registry=get_tool_registry_dep(),
         policy_engine=get_policy_engine(),
+        index_manager=get_index_manager(),
+        ingestion_pipeline=get_ingestion_pipeline(),
     )
 
 
@@ -102,14 +104,14 @@ def get_provenance_service() -> ProvenanceService:
 
 
 # Type aliases for FastAPI Depends
-ConfigDep      = Annotated[NovaMinddConfig,          Depends(get_config)]
-ProviderDep    = Annotated[OllamaProvider,           Depends(get_ollama_provider)]
-ResidencyDep   = Annotated[ResidencyManager,         Depends(get_residency_manager)]
-RouterDep      = Annotated[ModelRouter,              Depends(get_model_router)]
-RetrievalDep   = Annotated[RetrievalEngine,          Depends(get_retrieval_engine)]
-DocumentStoreDep = Annotated[DocumentStore,          Depends(get_document_store)]
-IndexManagerDep  = Annotated[IndexManager,           Depends(get_index_manager)]
-IngestionDep   = Annotated[DocumentIngestionPipeline, Depends(get_ingestion_pipeline)]
-PolicyDep      = Annotated[PolicyEngine,             Depends(get_policy_engine)]
-GatewayDep     = Annotated[ToolGateway,              Depends(get_tool_gateway)]
-ProvenanceDep  = Annotated[ProvenanceService,        Depends(get_provenance_service)]
+ConfigDep        = Annotated[NovaMinddConfig,             Depends(get_config)]
+ProviderDep      = Annotated[OllamaProvider,              Depends(get_ollama_provider)]
+ResidencyDep     = Annotated[ResidencyManager,            Depends(get_residency_manager)]
+RouterDep        = Annotated[ModelRouter,                 Depends(get_model_router)]
+RetrievalDep     = Annotated[RetrievalEngine,             Depends(get_retrieval_engine)]
+DocumentStoreDep = Annotated[DocumentStore,               Depends(get_document_store)]
+IndexManagerDep  = Annotated[IndexManager,                Depends(get_index_manager)]
+IngestionDep     = Annotated[DocumentIngestionPipeline,   Depends(get_ingestion_pipeline)]
+PolicyDep        = Annotated[PolicyEngine,                Depends(get_policy_engine)]
+GatewayDep       = Annotated[ToolGateway,                 Depends(get_tool_gateway)]
+ProvenanceDep    = Annotated[ProvenanceService,           Depends(get_provenance_service)]

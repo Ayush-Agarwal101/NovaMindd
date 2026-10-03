@@ -12,7 +12,7 @@ from __future__ import annotations
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from core.control_plane.policy import PolicyContext, PolicyDecision, PolicyEngine
 from core.control_plane.rbac import get_rbac
@@ -25,6 +25,10 @@ from core.control_plane.tools import (
 )
 from core.logging import get_audit_logger, get_logger
 from core.sandbox.docker_sandbox import DockerSandbox, SandboxRequest
+
+if TYPE_CHECKING:
+    from core.retrieval.index_manager import IndexManager
+    from core.retrieval.ingestion import DocumentIngestionPipeline
 
 logger = get_logger(__name__)
 
@@ -46,12 +50,16 @@ class ToolGateway:
         self,
         registry: ToolRegistry | None = None,
         policy_engine: PolicyEngine | None = None,
+        index_manager: "IndexManager | None" = None,
+        ingestion_pipeline: "DocumentIngestionPipeline | None" = None,
     ) -> None:
         self._registry = registry or get_tool_registry()
         self._auth = ToolAuthorizationService(self._registry)
         self._policy = policy_engine or PolicyEngine()
         self._sandbox = DockerSandbox()
         self._rbac = get_rbac()
+        self._index_manager = index_manager
+        self._ingestion = ingestion_pipeline
 
     def call(self, request: ToolCallRequest) -> ToolCallResult:
         req_id = request.request_id or str(uuid.uuid4())
@@ -166,25 +174,72 @@ class ToolGateway:
     def _handle_knowledge_search(
         self, request: ToolCallRequest, req_id: str
     ) -> ToolCallResult:
-        # The retrieval engine is injected at application startup.
-        # Returning stub here; the API layer wires up the real engine.
+        if self._index_manager is None:
+            return ToolCallResult(
+                tool_id=request.tool_id,
+                request_id=req_id,
+                success=False,
+                output=None,
+                error="Retrieval engine not available.",
+            )
+        query = request.arguments.get("query", "")
+        top_k = int(request.arguments.get("top_k", 5))
+        session_id = request.arguments.get("session_id")
+        results = self._index_manager.retrieve_combined(
+            session_id=session_id, query=query, top_k=top_k
+        )
         return ToolCallResult(
             tool_id=request.tool_id,
             request_id=req_id,
-            success=False,
-            output=None,
-            error="Retrieval engine not wired. Inject via ToolGateway.set_retrieval_engine().",
+            success=True,
+            output={
+                "results": [
+                    {
+                        "text": r.text,
+                        "source": r.source_path,
+                        "page": r.page,
+                        "score": round(r.score, 4),
+                    }
+                    for r in results
+                ]
+            },
+            error=None,
         )
 
     def _handle_document_ingest(
         self, request: ToolCallRequest, req_id: str
     ) -> ToolCallResult:
+        if self._ingestion is None:
+            return ToolCallResult(
+                tool_id=request.tool_id,
+                request_id=req_id,
+                success=False,
+                output=None,
+                error="Ingestion pipeline not available.",
+            )
+        # Accepts raw text content as a quick ingest path for the agent
+        content = request.arguments.get("content", "")
+        filename = request.arguments.get("filename", "agent_upload.txt")
+        if not content:
+            return ToolCallResult(
+                tool_id=request.tool_id,
+                request_id=req_id,
+                success=False,
+                output=None,
+                error="No content provided for ingestion.",
+            )
+        doc = self._ingestion.ingest(content.encode("utf-8"), filename=filename)
+        if self._index_manager is not None:
+            self._index_manager.index_global(doc.chunks)
         return ToolCallResult(
             tool_id=request.tool_id,
             request_id=req_id,
-            success=False,
-            output=None,
-            error="Document ingestion not wired. Inject via ToolGateway.set_ingestion_pipeline().",
+            success=True,
+            output={
+                "document_id": doc.document_id,
+                "chunks_created": doc.total_chunks,
+            },
+            error=None,
         )
 
     # ------------------------------------------------------------------
