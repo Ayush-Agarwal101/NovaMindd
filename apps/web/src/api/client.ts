@@ -132,17 +132,99 @@ export async function routeModel(capability: string, requiresVision = false): Pr
 
 // ── Knowledge ────────────────────────────────────────────────────────────────
 
-export async function ingestDocument(file: File): Promise<IngestResult> {
+export async function ingestDocument(
+  file: File,
+  scope: 'global' | 'session' = 'global',
+  sessionId?: string,
+): Promise<IngestResult> {
   const form = new FormData()
   form.append('file', file)
-  const r = await api.post('/knowledge/ingest', form, {
+  const params = new URLSearchParams({ scope })
+  if (sessionId) params.set('session_id', sessionId)
+  const r = await api.post(`/knowledge/ingest?${params}`, form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
   return r.data
 }
 
-export async function searchKnowledge(query: string, topK = 5): Promise<SearchResult[]> {
-  const r = await api.post('/knowledge/search', { query, top_k: topK })
+export async function searchKnowledge(
+  query: string,
+  topK = 5,
+  scope: 'global' | 'session' | 'combined' = 'global',
+  sessionId?: string,
+): Promise<SearchResult[]> {
+  const r = await api.post('/knowledge/search', {
+    query, top_k: topK, scope, session_id: sessionId ?? null,
+  })
+  return r.data
+}
+
+// ── Global Documents ──────────────────────────────────────────────────────────
+
+export interface DocumentMeta {
+  document_id: string
+  filename: string
+  doc_type: string
+  scope: string
+  session_id: string | null
+  page_count: number
+  chunk_count: number
+  created_at: number
+}
+
+export interface IngestDocumentResult {
+  document_id: string
+  filename: string
+  chunks_created: number
+  ocr_needed_pages: number[]
+}
+
+export async function ingestGlobalDocument(file: File): Promise<IngestDocumentResult> {
+  const form = new FormData()
+  form.append('file', file)
+  const r = await api.post('/documents/ingest', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return r.data
+}
+
+export async function listGlobalDocuments(): Promise<DocumentMeta[]> {
+  const r = await api.get('/documents/')
+  return r.data
+}
+
+export async function deleteGlobalDocument(documentId: string): Promise<void> {
+  await api.delete(`/documents/${documentId}`)
+}
+
+// ── Chat ─────────────────────────────────────────────────────────────────────
+
+export interface ChatTurn {
+  role: 'user' | 'assistant' | 'system'
+  content: string
+}
+
+export interface ChatCompleteResult {
+  content: string
+  model: string
+  prompt_tokens: number
+  completion_tokens: number
+}
+
+export async function chatComplete(params: {
+  model: string
+  messages: ChatTurn[]
+  temperature?: number
+  max_tokens?: number
+  session_id?: string
+}): Promise<ChatCompleteResult> {
+  const r = await api.post('/chat/complete', {
+    model: params.model,
+    messages: params.messages,
+    temperature: params.temperature ?? 0.7,
+    max_tokens: params.max_tokens ?? 2048,
+    session_id: params.session_id ?? null,
+  })
   return r.data
 }
 

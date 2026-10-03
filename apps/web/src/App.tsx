@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import Models from './pages/Models'
+import Documents from './pages/Documents'
 import Knowledge from './pages/Knowledge'
 import Chat from './pages/Chat'
 import Agent from './pages/Agent'
@@ -9,6 +10,7 @@ import Admin from './pages/Admin'
 import {
   LayoutDashboard,
   Cpu,
+  Library,
   BookOpen,
   MessageSquare,
   BotMessageSquare,
@@ -17,13 +19,14 @@ import {
 } from 'lucide-react'
 
 const NAV = [
-  { to: '/',          label: 'Dashboard',  Icon: LayoutDashboard },
-  { to: '/models',    label: 'Models',     Icon: Cpu },
-  { to: '/chat',      label: 'Chat',       Icon: MessageSquare },
-  { to: '/knowledge', label: 'Knowledge',  Icon: BookOpen },
-  { to: '/agent',     label: 'Agent',      Icon: BotMessageSquare },
-  { to: '/artifacts', label: 'Artifacts',  Icon: FileDown },
-  { to: '/admin',     label: 'Admin',      Icon: ShieldCheck },
+  { to: '/',           label: 'Dashboard',  Icon: LayoutDashboard },
+  { to: '/models',     label: 'Models',     Icon: Cpu },
+  { to: '/chat',       label: 'Chat',       Icon: MessageSquare },
+  { to: '/documents',  label: 'Documents',  Icon: Library },
+  { to: '/knowledge',  label: 'Knowledge',  Icon: BookOpen },
+  { to: '/agent',      label: 'Agent',      Icon: BotMessageSquare },
+  { to: '/artifacts',  label: 'Artifacts',  Icon: FileDown },
+  { to: '/admin',      label: 'Admin',      Icon: ShieldCheck },
 ]
 
 function Sidebar() {
@@ -136,13 +139,14 @@ function Header({ title }: { title: string }) {
 }
 
 const PAGE_TITLES: Record<string, string> = {
-  '/':          'Dashboard',
-  '/models':    'Models',
-  '/chat':      'Chat',
-  '/knowledge': 'Knowledge Base',
-  '/agent':     'Agent',
-  '/artifacts': 'Artifacts',
-  '/admin':     'Admin',
+  '/':           'Dashboard',
+  '/models':     'Models',
+  '/chat':       'Chat',
+  '/documents':  'Documents',
+  '/knowledge':  'Knowledge Base',
+  '/agent':      'Agent',
+  '/artifacts':  'Artifacts',
+  '/admin':      'Admin',
 }
 
 function Main() {
@@ -155,14 +159,15 @@ function Main() {
       <Header title={title} />
       <div style={{ flex: 1, overflow: 'auto', padding: 24 }}>
         <Routes>
-          <Route path="/"          element={<Dashboard />} />
-          <Route path="/models"    element={<Models />} />
-          <Route path="/chat"      element={<Chat />} />
-          <Route path="/knowledge" element={<Knowledge />} />
-          <Route path="/agent"     element={<Agent />} />
-          <Route path="/artifacts" element={<Artifacts />} />
-          <Route path="/admin"     element={<Admin />} />
-          <Route path="*"          element={<Navigate to="/" replace />} />
+          <Route path="/"           element={<Dashboard />} />
+          <Route path="/models"     element={<Models />} />
+          <Route path="/chat"       element={<Chat />} />
+          <Route path="/documents"  element={<Documents />} />
+          <Route path="/knowledge"  element={<Knowledge />} />
+          <Route path="/agent"      element={<Agent />} />
+          <Route path="/artifacts"  element={<Artifacts />} />
+          <Route path="/admin"      element={<Admin />} />
+          <Route path="*"           element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </div>

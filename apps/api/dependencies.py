@@ -15,7 +15,9 @@ from core.inference.providers.ollama import OllamaProvider
 from core.inference.registry import ModelRegistry, get_registry
 from core.inference.residency import ResidencyManager
 from core.inference.router import ModelRouter
+from core.retrieval.document_store import DocumentStore
 from core.retrieval.engine import RetrievalEngine
+from core.retrieval.index_manager import IndexManager
 from core.retrieval.ingestion import DocumentIngestionPipeline
 from core.control_plane.policy import PolicyEngine
 from core.control_plane.rbac import RBACService, get_rbac
@@ -56,6 +58,17 @@ def get_retrieval_engine() -> RetrievalEngine:
 
 
 @lru_cache(maxsize=1)
+def get_document_store() -> DocumentStore:
+    return DocumentStore()
+
+
+@lru_cache(maxsize=1)
+def get_index_manager() -> IndexManager:
+    """Singleton IndexManager — rehydrates from SQLite on first call."""
+    return IndexManager(store=get_document_store())
+
+
+@lru_cache(maxsize=1)
 def get_ingestion_pipeline() -> DocumentIngestionPipeline:
     return DocumentIngestionPipeline()
 
@@ -89,12 +102,14 @@ def get_provenance_service() -> ProvenanceService:
 
 
 # Type aliases for FastAPI Depends
-ConfigDep = Annotated[NovaMinddConfig, Depends(get_config)]
-ProviderDep = Annotated[OllamaProvider, Depends(get_ollama_provider)]
-ResidencyDep = Annotated[ResidencyManager, Depends(get_residency_manager)]
-RouterDep = Annotated[ModelRouter, Depends(get_model_router)]
-RetrievalDep = Annotated[RetrievalEngine, Depends(get_retrieval_engine)]
-IngestionDep = Annotated[DocumentIngestionPipeline, Depends(get_ingestion_pipeline)]
-PolicyDep = Annotated[PolicyEngine, Depends(get_policy_engine)]
-GatewayDep = Annotated[ToolGateway, Depends(get_tool_gateway)]
-ProvenanceDep = Annotated[ProvenanceService, Depends(get_provenance_service)]
+ConfigDep      = Annotated[NovaMinddConfig,          Depends(get_config)]
+ProviderDep    = Annotated[OllamaProvider,           Depends(get_ollama_provider)]
+ResidencyDep   = Annotated[ResidencyManager,         Depends(get_residency_manager)]
+RouterDep      = Annotated[ModelRouter,              Depends(get_model_router)]
+RetrievalDep   = Annotated[RetrievalEngine,          Depends(get_retrieval_engine)]
+DocumentStoreDep = Annotated[DocumentStore,          Depends(get_document_store)]
+IndexManagerDep  = Annotated[IndexManager,           Depends(get_index_manager)]
+IngestionDep   = Annotated[DocumentIngestionPipeline, Depends(get_ingestion_pipeline)]
+PolicyDep      = Annotated[PolicyEngine,             Depends(get_policy_engine)]
+GatewayDep     = Annotated[ToolGateway,              Depends(get_tool_gateway)]
+ProvenanceDep  = Annotated[ProvenanceService,        Depends(get_provenance_service)]

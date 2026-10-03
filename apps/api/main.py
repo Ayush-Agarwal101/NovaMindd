@@ -66,13 +66,15 @@ def create_app() -> FastAPI:
     )
 
     # Mount routers
-    from apps.api.routes import models, knowledge, agents, artifacts, admin
+    from apps.api.routes import models, knowledge, agents, artifacts, admin, chat, documents
     api_prefix = cfg.api.prefix
-    app.include_router(models.router, prefix=api_prefix)
+    app.include_router(models.router,    prefix=api_prefix)
     app.include_router(knowledge.router, prefix=api_prefix)
-    app.include_router(agents.router, prefix=api_prefix)
+    app.include_router(documents.router, prefix=api_prefix)
+    app.include_router(agents.router,    prefix=api_prefix)
     app.include_router(artifacts.router, prefix=api_prefix)
-    app.include_router(admin.router, prefix=api_prefix)
+    app.include_router(admin.router,     prefix=api_prefix)
+    app.include_router(chat.router,      prefix=api_prefix)
 
     @app.get("/health")
     async def health() -> dict:

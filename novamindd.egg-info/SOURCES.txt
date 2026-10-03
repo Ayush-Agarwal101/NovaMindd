@@ -8,6 +8,8 @@ apps/api/routes/__init__.py
 apps/api/routes/admin.py
 apps/api/routes/agents.py
 apps/api/routes/artifacts.py
+apps/api/routes/chat.py
+apps/api/routes/documents.py
 apps/api/routes/knowledge.py
 apps/api/routes/models.py
 core/__init__.py
@@ -40,7 +42,9 @@ core/provenance/__init__.py
 core/provenance/service.py
 core/retrieval/__init__.py
 core/retrieval/bm25_index.py
+core/retrieval/document_store.py
 core/retrieval/engine.py
+core/retrieval/index_manager.py
 core/retrieval/ingestion.py
 core/retrieval/vector_index.py
 core/sandbox/__init__.py

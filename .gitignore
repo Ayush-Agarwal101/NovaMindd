@@ -4,3 +4,5 @@ sovereignenv
 .env
 */__pycache__
 installation.md
+data
+novamindd-windows.html
