@@ -70,8 +70,11 @@ class RetrievalConfig(BaseModel):
     top_k_bm25: int = 20
     top_k_vector: int = 20
     top_k_rerank: int = 5
-    embedding_model: str = "all-MiniLM-L6-v2"
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    # Directory where embedding/reranker models are saved locally.
+    # Resolved relative to the project root at runtime.
+    models_dir: str = "models/embeddings"
 
 
 class DocumentAIConfig(BaseModel):
@@ -125,7 +128,7 @@ class AuditConfig(BaseModel):
     include_request_body: bool = False
 
 
-class NovaMinddConfig(BaseModel):
+class  NovaMinddConfig(BaseModel):
     app: AppConfig = AppConfig()
     api: APIConfig = APIConfig()
     auth: AuthConfig = AuthConfig()

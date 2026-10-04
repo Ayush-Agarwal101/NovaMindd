@@ -59,7 +59,7 @@ class RetrievalEngine:
     ) -> None:
         self._cfg = get_config().retrieval
         self._bm25 = bm25 or BM25Index()
-        self._vector = vector or VectorIndex(self._cfg.embedding_model)
+        self._vector = vector or VectorIndex(self._cfg.embedding_model, self._cfg.models_dir)
         self._reranker = None   # lazy-loaded
 
     def index(self, chunks: list[DocumentChunk]) -> None:

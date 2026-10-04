@@ -27,7 +27,7 @@ def _make_engine() -> RetrievalEngine:
     cfg = get_config().retrieval
     return RetrievalEngine(
         bm25=BM25Index(),
-        vector=VectorIndex(cfg.embedding_model),
+        vector=VectorIndex(cfg.embedding_model, cfg.models_dir),
     )
 
 
