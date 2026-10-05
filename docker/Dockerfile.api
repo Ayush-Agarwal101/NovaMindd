@@ -22,6 +22,15 @@ RUN pip install -e ".[dev]" || pip install --no-cache-dir \
 COPY apps/ ./apps/
 COPY core/ ./core/
 COPY configs/ ./configs/
+COPY scripts/ ./scripts/
+
+# ── Offline model bake-in ────────────────────────────────────────────────────
+# If a pre-downloaded models/ directory is present in the build context it is
+# copied in directly (fast, no network needed).  Otherwise the download script
+# fetches both models from HuggingFace during the build so the resulting image
+# is fully self-contained and never needs internet access at runtime.
+COPY models/ ./models/
+RUN python scripts/download_models.py
 
 EXPOSE 8000
 

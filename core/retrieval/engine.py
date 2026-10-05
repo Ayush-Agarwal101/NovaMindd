@@ -7,6 +7,7 @@ hybrid retrieval call. Returns ranked evidence with source metadata.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from core.config import get_config
@@ -16,6 +17,23 @@ from core.retrieval.ingestion import DocumentChunk
 from core.retrieval.vector_index import VectorIndex, VectorResult
 
 logger = get_logger(__name__)
+
+# Project root — same anchor used by VectorIndex
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _reranker_local_path(model_name: str, models_dir: str) -> Path:
+    """
+    Resolve the on-disk path for a reranker model using the same slug-first
+    strategy as VectorIndex: try the bare model slug first, then the
+    ``--``-escaped full name.
+    """
+    base = _PROJECT_ROOT / models_dir
+    slug = model_name.split("/")[-1]
+    slug_path = base / slug
+    if slug_path.exists():
+        return slug_path
+    return base / model_name.replace("/", "--")
 
 
 @dataclass
@@ -130,11 +148,20 @@ class RetrievalEngine:
     # ------------------------------------------------------------------
 
     def _should_rerank(self) -> bool:
+        """
+        Only rerank when:
+          1. sentence-transformers is installed, AND
+          2. the reranker model directory exists locally.
+
+        This prevents any network call when running fully offline and the
+        cross-encoder has not been downloaded yet.
+        """
         try:
             from sentence_transformers import CrossEncoder  # noqa: F401
-            return True
         except ImportError:
             return False
+        local = _reranker_local_path(self._cfg.reranker_model, self._cfg.models_dir)
+        return local.exists()
 
     def _rerank(
         self,
@@ -145,7 +172,20 @@ class RetrievalEngine:
         try:
             from sentence_transformers import CrossEncoder
             if self._reranker is None:
-                self._reranker = CrossEncoder(self._cfg.reranker_model)
+                local = _reranker_local_path(
+                    self._cfg.reranker_model, self._cfg.models_dir
+                )
+                if local.exists():
+                    logger.info("reranker_loaded_local", path=str(local))
+                    self._reranker = CrossEncoder(str(local), local_files_only=True)
+                else:
+                    # Model not on disk — skip reranking silently.
+                    logger.info(
+                        "reranker_not_available_offline",
+                        model=self._cfg.reranker_model,
+                        expected_path=str(local),
+                    )
+                    return items[:top_k]
             pairs = [(query, item.text) for item in items]
             scores = self._reranker.predict(pairs)
             for item, score in zip(items, scores):

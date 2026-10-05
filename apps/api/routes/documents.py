@@ -88,6 +88,27 @@ async def list_global_documents(store: DocumentStoreDep) -> list[DocumentMeta]:
     ]
 
 
+@router.get("/{document_id}", response_model=DocumentMeta)
+async def get_global_document(
+    document_id: str,
+    store: DocumentStoreDep,
+) -> DocumentMeta:
+    """Fetch metadata for a single document by ID."""
+    row = store.get_document(document_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return DocumentMeta(
+        document_id=row["document_id"],
+        filename=row["filename"],
+        doc_type=row["doc_type"],
+        scope=row["scope"],
+        session_id=row.get("session_id"),
+        page_count=row["page_count"],
+        chunk_count=row["chunk_count"],
+        created_at=row["created_at"],
+    )
+
+
 @router.delete("/{document_id}", status_code=204)
 async def delete_global_document(
     document_id: str,

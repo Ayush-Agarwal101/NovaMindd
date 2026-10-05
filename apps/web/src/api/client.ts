@@ -204,6 +204,11 @@ export async function listGlobalDocuments(): Promise<DocumentMeta[]> {
   return r.data
 }
 
+export async function getGlobalDocument(documentId: string): Promise<DocumentMeta> {
+  const r = await api.get(`/documents/${documentId}`)
+  return r.data
+}
+
 export async function deleteGlobalDocument(documentId: string): Promise<void> {
   await api.delete(`/documents/${documentId}`)
 }

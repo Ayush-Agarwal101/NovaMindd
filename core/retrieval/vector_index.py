@@ -45,11 +45,16 @@ class VectorIndex:
         models_dir: str = "models/embeddings",
     ) -> None:
         self._model_name = model_name
-        # Derive a filesystem-safe subdirectory name from the model id,
-        # e.g. "sentence-transformers/all-MiniLM-L6-v2" → "sentence-transformers--all-MiniLM-L6-v2"
-        self._local_path: Path = (
-            _PROJECT_ROOT / models_dir / model_name.replace("/", "--")
-        )
+        base = _PROJECT_ROOT / models_dir
+        # Candidate 1: just the model slug (e.g. "all-MiniLM-L6-v2") — matches
+        #              models downloaded manually or by older tooling.
+        slug = model_name.split("/")[-1]
+        # Candidate 2: full escaped name (e.g. "sentence-transformers--all-MiniLM-L6-v2")
+        escaped = model_name.replace("/", "--")
+        if (base / slug).exists():
+            self._local_path: Path = base / slug
+        else:
+            self._local_path = base / escaped
         self._model = None   # lazy-loaded
         self._chunks: list[DocumentChunk] = []
         self._matrix: np.ndarray | None = None   # shape (N, D)
@@ -69,11 +74,21 @@ class VectorIndex:
                     "embedding_model_loaded_local",
                     path=str(self._local_path),
                 )
-                self._model = SentenceTransformer(
-                    str(self._local_path), local_files_only=True
-                )
-            else:
-                # First run: download from HuggingFace and persist to disk.
+                try:
+                    self._model = SentenceTransformer(
+                        str(self._local_path), local_files_only=True
+                    )
+                except Exception as exc:
+                    # Local copy is corrupt or incomplete — fall through to download.
+                    logger.warning(
+                        "embedding_model_local_load_failed",
+                        path=str(self._local_path),
+                        error=str(exc),
+                    )
+
+            if self._model is None:
+                # First run or local copy failed: download from HuggingFace and
+                # persist to disk so subsequent starts work fully offline.
                 logger.info(
                     "embedding_model_downloading",
                     model=self._model_name,

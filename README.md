@@ -1,14 +1,15 @@
-# NovaMindd
+# Team Name: 
+## NovaMindd
 
 > **A sovereign, local-first AI execution platform for confidential industrial workflows.**
 
-NovaMindd is an AI workbench designed for environments where sensitive documents, internal knowledge, engineering workflows, and AI-generated actions must remain under organisational control.
+SovereignAI is an AI workbench designed for environments where sensitive documents, internal knowledge, engineering workflows, and AI-generated actions must remain under organisational control.
 
 The core idea is simple:
 
-> **The model provides intelligence. NovaMindd provides authority.**
+> **The model provides intelligence. SovereignAI provides authority.**
 
-NovaMindd is not intended to be another local chatbot. It is designed as a **control plane around local AI models**, combining model orchestration, private retrieval, multimodal document understanding, policy-controlled tools, sandboxed execution, validation, deterministic artifact generation, and end-to-end provenance.
+SovereignAI is not intended to be another local chatbot. It is designed as a **control plane around local AI models**, combining model orchestration, private retrieval, multimodal document understanding, policy-controlled tools, sandboxed execution, validation, deterministic artifact generation, and end-to-end provenance.
 
 ---
 
@@ -19,7 +20,7 @@ NovaMindd is not intended to be another local chatbot. It is designed as a **con
 - [Goals](#goals)
 - [Non-Goals](#non-goals)
 - [Core Architecture](#core-architecture)
-- [How NovaMindd Works](#how-NovaMindd-works)
+- [How SovereignAI Works](#how-SovereignAI-works)
 - [Core Components](#core-components)`
 - [Model Orchestration](#model-orchestration)
 - [Adaptive Model Residency](#adaptive-model-residency)
@@ -46,7 +47,7 @@ NovaMindd is not intended to be another local chatbot. It is designed as a **con
 
 # Overview
 
-NovaMindd provides a controlled environment in which local AI models can:
+SovereignAI provides a controlled environment in which local AI models can:
 
 - understand confidential documents;
 - retrieve organisation-specific knowledge;
@@ -67,12 +68,12 @@ The platform is deliberately designed so that **LLM output is treated as a propo
                                  │
                                  ▼
                     ┌─────────────────────────┐
-                    │     NovaMindd WORKBENCH   │
+                    │     SovereignAI WORKBENCH   │
                     └────────────┬────────────┘
                                  │
                                  ▼
               ┌─────────────────────────────────────┐
-              │          NovaMindd CONTROL PLANE      │
+              │          SovereignAI CONTROL PLANE      │
               │                                     │
               │  Routing │ Policy │ Tools │ Audit   │
               │  Residency │ Validation │ Provenance│
@@ -145,13 +146,13 @@ An AI model capable of writing code or calling tools must not automatically rece
 
 A fluent model response is not necessarily a correct work product.
 
-NovaMindd therefore treats **retrieval, execution, validation and provenance as first-class system components**.
+SovereignAI therefore treats **retrieval, execution, validation and provenance as first-class system components**.
 
 ---
 
 # Goals
 
-NovaMindd aims to provide the following capabilities.
+SovereignAI aims to provide the following capabilities.
 
 ## 1. Local AI Inference
 
@@ -197,7 +198,7 @@ Separate AI reasoning from final document rendering so that DOCX, XLSX, PPTX and
 
 # Non-Goals
 
-NovaMindd is **not** intended to be:
+SovereignAI is **not** intended to be:
 
 - a generic consumer chatbot;
 - a replacement for every existing local AI application;
@@ -206,13 +207,13 @@ NovaMindd is **not** intended to be:
 - a system that blindly trusts model-generated reasoning;
 - a production safety-critical system without deployment-specific validation.
 
-NovaMindd can integrate existing open-source AI components. Its focus is the **control plane that governs how those components are used together**.
+SovereignAI can integrate existing open-source AI components. Its focus is the **control plane that governs how those components are used together**.
 
 ---
 
 # Core Architecture
 
-NovaMindd is organised around several logical planes.
+SovereignAI is organised around several logical planes.
 
 ```mermaid
 flowchart TB
@@ -225,7 +226,7 @@ flowchart TB
         AUTH[Authentication / RBAC]
     end
 
-    subgraph CONTROL["NovaMindd Control Plane"]
+    subgraph CONTROL["SovereignAI Control Plane"]
         POLICY[Policy Engine]
         ROUTER[Model Router]
         RESIDENCY[Model Residency Manager]
@@ -304,7 +305,7 @@ flowchart TB
 
 ---
 
-# How NovaMindd Works
+# How SovereignAI Works
 
 A typical request passes through the following lifecycle:
 
@@ -406,7 +407,7 @@ The router should remain independently testable from the models themselves.
 
 # Adaptive Model Residency
 
-NovaMindd is designed for systems where GPU memory is limited.
+SovereignAI is designed for systems where GPU memory is limited.
 
 Instead of keeping every model in VRAM:
 
@@ -444,7 +445,7 @@ A prototype may target a constrained GPU environment around **6 GB VRAM**, while
 
 # Knowledge and RAG
 
-NovaMindd uses a private knowledge layer to ground model reasoning in organisational information.
+SovereignAI uses a private knowledge layer to ground model reasoning in organisational information.
 
 The retrieval architecture combines exact and semantic retrieval.
 
@@ -491,7 +492,7 @@ The knowledge layer should preserve document metadata and source references so t
 
 # Multimodal Document Understanding
 
-NovaMindd is intended to work with documents that cannot be reliably reduced to plain text.
+SovereignAI is intended to work with documents that cannot be reliably reduced to plain text.
 
 ```mermaid
 flowchart TD
@@ -528,7 +529,7 @@ Low-confidence interpretation should be eligible for additional verification or 
 
 # Agent and Tool Execution
 
-NovaMindd uses a controlled tool-calling architecture.
+SovereignAI uses a controlled tool-calling architecture.
 
 The intended relationship is:
 
@@ -657,7 +658,7 @@ The goal is to prevent generated code from silently:
 
 # Validation and Fail-Closed Behaviour
 
-NovaMindd should prefer a controlled failure over an unsupported confident answer.
+SovereignAI should prefer a controlled failure over an unsupported confident answer.
 
 Examples:
 
@@ -708,7 +709,7 @@ Validation can occur at multiple levels:
 
 # Artifact Generation
 
-NovaMindd separates AI reasoning from deterministic rendering.
+SovereignAI separates AI reasoning from deterministic rendering.
 
 ```mermaid
 flowchart LR
@@ -846,7 +847,7 @@ The implementation should be organised around clear system boundaries rather tha
 A target repository structure:
 
 ```text
-NovaMindd/
+SovereignAI/
 │
 ├── apps/
 │   ├── api/
@@ -965,7 +966,7 @@ Individual components should remain replaceable through interfaces rather than b
 
 # Configuration Model
 
-NovaMindd should avoid hard-coding model, tool and policy decisions into application logic.
+SovereignAI should avoid hard-coding model, tool and policy decisions into application logic.
 
 Configuration should conceptually define:
 
@@ -1087,7 +1088,7 @@ The actual schema should be defined and versioned as implementation progresses.
 
 # Evaluation
 
-NovaMindd should be evaluated as a **system**, not only by measuring LLM response quality.
+SovereignAI should be evaluated as a **system**, not only by measuring LLM response quality.
 
 ## Model Orchestration
 
@@ -1199,7 +1200,7 @@ Tests should verify both:
 
 # Deployment Model
 
-NovaMindd is designed for progressive deployment.
+SovereignAI is designed for progressive deployment.
 
 ```text
                     ┌────────────────────┐
@@ -1287,7 +1288,7 @@ Routing, execution, validation and provenance should be measurable and auditable
 
 # Project Status
 
-NovaMindd is being developed as an engineering project / prototype.
+SovereignAI is being developed as an engineering project / prototype.
 
 The repository is intended to evolve toward a working platform rather than remain a conceptual demonstration.
 
@@ -1317,7 +1318,7 @@ Features should be considered complete only after they have corresponding tests.
 
 # Contributing
 
-Contributions should preserve NovaMindd's architectural boundaries.
+Contributions should preserve SovereignAI's architectural boundaries.
 
 In particular:
 
@@ -1340,14 +1341,14 @@ License to be defined.
 
 ## Final Principle
 
-NovaMindd is built around one architectural distinction:
+SovereignAI is built around one architectural distinction:
 
 ```text
                  AI MODEL
               "What should I do?"
                      │
                      ▼
-              NovaMindd CONTROL
+              SovereignAI CONTROL
               "Are you allowed?"
                      │
                      ▼
@@ -1364,6 +1365,6 @@ NovaMindd is built around one architectural distinction:
 ```
 
 **The model reasons.  
-NovaMindd controls.  
+SovereignAI controls.  
 The system verifies.  
 The human remains accountable.**
