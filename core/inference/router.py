@@ -42,6 +42,11 @@ class RoutingRequest:
     requires_vision: bool = False
     max_vram_mb: int | None = None          # override VRAM limit
     preferred_model_id: str | None = None   # explicit override
+    # When True, models whose *only* capabilities are coding/tool_generation are
+    # excluded from selection.  Set this for decomposition, synthesis, and
+    # verification calls so a coding-specialist model is never invoked for
+    # document analysis or reasoning tasks.
+    exclude_coding_only: bool = False
     metadata: dict[str, Any] | None = None
 
 
@@ -114,6 +119,11 @@ class ModelRouter:
     # Helpers
     # ------------------------------------------------------------------
 
+    # Capabilities that mark a model as coding-specialist.
+    # A model is considered "coding-only" when ALL of its declared capabilities
+    # are in this set — meaning it provides no general reasoning or text ability.
+    _CODING_ONLY_CAPS: frozenset[str] = frozenset({"coding", "tool_generation"})
+
     def _eligible(self, request: RoutingRequest) -> list[ModelRegistryEntry]:
         from core.inference.registry import ModelStatus
 
@@ -126,8 +136,16 @@ class ModelRouter:
                 continue
             if request.requires_vision and "vision" not in entry.capabilities:
                 continue
+            if request.exclude_coding_only and self._is_coding_only(entry):
+                continue
             candidates.append(entry)
         return candidates
+
+    def _is_coding_only(self, entry: ModelRegistryEntry) -> bool:
+        """Return True when the model's capabilities are exclusively coding-related."""
+        return bool(entry.capabilities) and set(entry.capabilities).issubset(
+            self._CODING_ONLY_CAPS
+        )
 
     @staticmethod
     def _decision(

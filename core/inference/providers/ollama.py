@@ -84,6 +84,7 @@ class OllamaProvider(BaseInferenceProvider):
                 completion_tokens=data.get("eval_count", 0),
                 done=data.get("done", True),
                 raw=data,
+                context=data.get("context"),   # KV-cache token array
             )
         except Exception as exc:
             logger.error("ollama_generate_failed", model=request.model_name, error=str(exc))
@@ -131,6 +132,10 @@ class OllamaProvider(BaseInferenceProvider):
             payload["images"] = [
                 base64.b64encode(img).decode() for img in req.images
             ]
+        # Reuse the KV-cache from a previous call to the same model so Ollama
+        # does not re-encode the prompt from scratch.
+        if req.context:
+            payload["context"] = req.context
         return payload
 
     async def aclose(self) -> None:

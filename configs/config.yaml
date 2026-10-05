@@ -29,6 +29,8 @@ models:
       - reasoning
       - text
       - summarisation
+      - tool_generation
+      - analysis
     vram_limit_mb: 4096
     context_length: 8192
     priority: 10
@@ -49,8 +51,6 @@ models:
     provider: ollama
     capabilities:
       - coding
-      - tool_generation
-      - analysis
     vram_limit_mb: 5120
     context_length: 16384
     priority: 30

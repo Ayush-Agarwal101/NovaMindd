@@ -16,12 +16,15 @@ core/__init__.py
 core/config.py
 core/logging.py
 core/agents/__init__.py
+core/agents/output_writer.py
 core/agents/planner.py
 core/agents/tool_gateway.py
 core/artifacts/__init__.py
 core/artifacts/docx_renderer.py
 core/artifacts/ir.py
+core/artifacts/pdf_renderer.py
 core/artifacts/pptx_renderer.py
+core/artifacts/txt_renderer.py
 core/artifacts/xlsx_renderer.py
 core/control_plane/__init__.py
 core/control_plane/policy.py

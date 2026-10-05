@@ -21,6 +21,10 @@ class InferenceRequest:
     temperature: float = 0.2
     stop: list[str] | None = None
     stream: bool = False
+    # Ollama /api/generate KV-cache token array from a previous response.
+    # Pass back the value returned in InferenceResponse.context to continue
+    # from the same KV cache instead of re-encoding the whole prompt.
+    context: list[int] | None = None
 
 
 @dataclass
@@ -31,6 +35,9 @@ class InferenceResponse:
     completion_tokens: int = 0
     done: bool = True
     raw: dict | None = None
+    # Ollama KV-cache context token array — pass back on the next call to the
+    # same model to avoid re-encoding and to preserve implicit conversation state.
+    context: list[int] | None = None
 
 
 class BaseInferenceProvider(ABC):

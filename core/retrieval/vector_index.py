@@ -17,7 +17,7 @@ from core.retrieval.ingestion import DocumentChunk
 logger = get_logger(__name__)
 
 # Project root is three levels up from this file (core/retrieval/vector_index.py)
-_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass

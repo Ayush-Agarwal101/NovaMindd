@@ -8,7 +8,9 @@ Multi-step reasoning agent that dynamically switches models per sub-task:
   4. Execute inference for the sub-step
   5. Execute any TOOL_CALLs via ToolGateway
   6. Synthesise all sub-step answers into a final response
-  7. Fail-closed if evidence is truly insufficient
+  7. Verify consistency — re-check that the synthesis is actually supported by
+     the cited evidence; downgrade to NOT_EVIDENCED / human-review if not.
+  8. Fail-closed if evidence is truly insufficient
 """
 from __future__ import annotations
 
@@ -100,6 +102,9 @@ Rules:
 - Only emit sub-steps that are genuinely needed.
 - If the whole task fits one capability, emit a single sub-step.
 - Order sub-steps logically (e.g. analyse data before writing report).
+- Use "coding" capability ONLY when the sub-step genuinely requires writing or \
+running code or performing data computation. Document reading, classification, \
+summarisation, and requirement-checking are NOT coding tasks.
 - Do not emit any text outside the JSON lines.
 
 Evidence summary:
@@ -109,23 +114,31 @@ Task: {task}
 """
 
 SUB_STEP_PROMPT = """\
-You are an AI assistant inside NovaMindd. Complete the following sub-step.
+You are an analytical assistant inside NovaMindd. Complete the following sub-step \
+strictly using the evidence provided.
 
-Rules:
-1. Use only the evidence provided below.
-2. If you need to execute code, emit exactly:
+GROUNDING RULES — these are mandatory and override everything else:
+1. Base every statement solely on the evidence passages numbered below.
+   Cite the evidence number [N] whenever you make a factual claim.
+2. Never infer, assume, or add domain knowledge not present in the evidence.
+3. If a classification or assessment is requested use ONLY these three verdicts:
+   - PASS   — the evidence explicitly and unambiguously satisfies the requirement.
+   - FAIL   — the evidence explicitly and unambiguously contradicts the requirement.
+   - NOT_EVIDENCED — the evidence does not mention or resolve the requirement.
+   Do not use any other verdict. When in doubt, choose NOT_EVIDENCED.
+4. Never invent requirements, criteria, or checklist items. Only evaluate what
+   the task description explicitly asks you to evaluate.
+5. If you need to execute code or query the knowledge base, emit exactly:
    TOOL_CALL: {{"tool_id": "python_exec", "arguments": {{"code": "<code>"}}}}
-3. If you need to search the knowledge base, emit:
    TOOL_CALL: {{"tool_id": "knowledge_search", "arguments": {{"query": "<query>"}}}}
-4. Do not hallucinate. Do not invent sources.
-5. Be concise and precise.
+6. Be concise and precise.
 
-Evidence:
+Evidence (passages from the uploaded source documents):
 {evidence}
 
 Sub-step {step_index}: {description}
 
-Previous results (for context):
+Previous sub-step results (for context only — do not re-classify based on these):
 {previous_results}
 """
 
@@ -133,16 +146,41 @@ SYNTHESIS_PROMPT = """\
 You are a senior analyst inside NovaMindd. \
 Combine the sub-step results below into a single, well-structured final answer.
 
-Rules:
-1. Preserve all findings from the sub-steps.
+GROUNDING RULES — these are mandatory:
+1. Preserve all findings from the sub-steps exactly as stated.
 2. Structure the output clearly (use sections if appropriate).
-3. Do NOT add new information not present in the sub-step results.
-4. Write in professional prose unless the task requires code or tables.
+3. Do NOT add new information, requirements, or criteria not present in the sub-step results.
+4. Do NOT upgrade a NOT_EVIDENCED finding to PASS or FAIL.
+5. Do NOT downgrade a cited PASS or FAIL without explicit counter-evidence in the sub-steps.
+6. Write in professional prose unless the task requires code or tables.
 
 Sub-step results:
 {sub_step_results}
 
 Original task: {task}
+"""
+
+CONSISTENCY_VERIFY_PROMPT = """\
+You are a consistency auditor inside NovaMindd. \
+Your job is to verify that the draft answer below is actually supported by the \
+evidence passages provided.
+
+INSTRUCTIONS:
+1. For each classification verdict (PASS / FAIL / NOT_EVIDENCED) in the draft answer,
+   check whether it is directly supported by at least one of the evidence passages.
+2. If a verdict is supported, keep it unchanged.
+3. If a PASS or FAIL verdict has no supporting passage in the evidence, change it to
+   NOT_EVIDENCED and append "(flagged: no supporting evidence — human review required)".
+4. If the draft answer contains a requirement or criterion that does not appear in the
+   evidence at all, mark it NOT_EVIDENCED.
+5. Do not add new information. Do not change verdicts that ARE supported.
+6. Return the full corrected answer and nothing else.
+
+Evidence passages:
+{evidence}
+
+Draft answer:
+{draft_answer}
 """
 
 
@@ -223,6 +261,12 @@ class AgentPlanner:
         step_results: list[SubStepResult] = []
         all_tool_calls: list[dict] = []
         tool_calls_remaining = request.max_tool_calls
+        # Per-model KV-cache context arrays.  Key = model_name; value = the
+        # token array returned by the last call to that model.  When the model
+        # stays the same across consecutive sub-steps the cache is reused so
+        # Ollama does not re-encode the prompt from scratch.  When the model
+        # changes the cache is intentionally left alone (it is model-specific).
+        model_contexts: dict[str, list[int]] = {}
 
         for step in sub_steps:
             step_idx = step["step"]
@@ -267,8 +311,12 @@ class AgentPlanner:
                     prompt=prompt,
                     max_tokens=2048,
                     temperature=0.1,
+                    context=model_contexts.get(routing.model_name),
                 )
             )
+            # Store the returned KV-cache for the next call to this model
+            if inf_resp.context:
+                model_contexts[routing.model_name] = inf_resp.context
 
             content, tc_results, tool_calls_remaining = await self._process_tool_calls(
                 content=inf_resp.content,
@@ -297,7 +345,15 @@ class AgentPlanner:
                 step_results=step_results,
             )
 
-        # 5. Fail-closed check
+        # 5. Consistency verification — re-check that every claim in the
+        #    synthesised answer is actually supported by the retrieved evidence.
+        final_answer = await self._verify_consistency(
+            evidence_text=evidence_text,
+            draft_answer=final_answer,
+            request=request,
+        )
+
+        # 6. Fail-closed check
         if "FAIL_CLOSED" in final_answer:
             return AgentResponse(
                 request_id=req_id,
@@ -348,24 +404,23 @@ class AgentPlanner:
     # ------------------------------------------------------------------
 
     def _gather_evidence(self, request: AgentRequest) -> list[EvidenceItem]:
-        evidence: list[EvidenceItem] = []
+        """
+        Retrieve evidence from the index.
+
+        Uploaded files are ingested into the session index in the API layer
+        before this method is called, so they are already searchable through
+        the normal retrieval path.  We do NOT re-inject the raw chunks here
+        as floating EvidenceItems — that would bypass scoring, cause duplicate
+        passages, and inflate their apparent relevance.  The session-scoped
+        engine already contains them and will return them if they are relevant.
+        """
         if self._index_manager is not None:
-            evidence = self._index_manager.retrieve_combined(
+            return self._index_manager.retrieve_combined(
                 session_id=request.session_id,
                 query=request.task,
                 top_k=10,
             )
-        else:
-            evidence = self._retrieval.retrieve(request.task)
-
-        if request.supplied_chunks:
-            for i, chunk in enumerate(request.supplied_chunks):
-                evidence.append(
-                    EvidenceItem(chunk=chunk, score=1.0 + i, source="uploaded")
-                )
-            evidence.sort(key=lambda e: e.score, reverse=True)
-
-        return evidence
+        return self._retrieval.retrieve(request.task)
 
     # ------------------------------------------------------------------
     # Task decomposition
@@ -376,7 +431,10 @@ class AgentPlanner:
     ) -> list[dict]:
         """Ask a fast model to break the task into typed sub-steps."""
         routing = self._router.route(
-            RoutingRequest(capability=request.capability)
+            RoutingRequest(
+                capability=request.capability,
+                exclude_coding_only=True,
+            )
         )
         await self._residency.ensure_loaded(routing.model_id)
 
@@ -419,7 +477,10 @@ class AgentPlanner:
         self, request: AgentRequest, step_results: list[SubStepResult]
     ) -> str:
         routing = self._router.route(
-            RoutingRequest(capability=request.capability)
+            RoutingRequest(
+                capability=request.capability,
+                exclude_coding_only=True,
+            )
         )
         await self._residency.ensure_loaded(routing.model_id)
 
@@ -440,6 +501,54 @@ class AgentPlanner:
             )
         )
         return resp.content
+
+    # ------------------------------------------------------------------
+    # Consistency verification
+    # ------------------------------------------------------------------
+
+    async def _verify_consistency(
+        self,
+        evidence_text: str,
+        draft_answer: str,
+        request: AgentRequest,
+    ) -> str:
+        """
+        Lightweight post-synthesis check: ask the reasoning model to confirm
+        that every verdict in the draft is actually backed by the evidence.
+        Unsupported PASS/FAIL verdicts are downgraded to NOT_EVIDENCED.
+        """
+        # Only bother if the answer looks like it contains classifications.
+        # This avoids a wasted LLM call on purely narrative answers.
+        classification_markers = ("PASS", "FAIL", "NOT_EVIDENCED")
+        if not any(m in draft_answer for m in classification_markers):
+            return draft_answer
+
+        routing = self._router.route(
+            RoutingRequest(
+                capability=TaskCapability.REASONING,
+                exclude_coding_only=True,
+            )
+        )
+        await self._residency.ensure_loaded(routing.model_id)
+
+        prompt = CONSISTENCY_VERIFY_PROMPT.format(
+            evidence=evidence_text,
+            draft_answer=draft_answer,
+        )
+        resp = await self._provider.generate(
+            InferenceRequest(
+                model_name=routing.model_name,
+                prompt=prompt,
+                max_tokens=3000,
+                temperature=0.0,   # deterministic — auditing, not creative
+            )
+        )
+        verified = resp.content.strip()
+        if verified:
+            logger.info("consistency_verified", request_id=None)
+            return verified
+        # If the model returns empty (shouldn't happen), pass the draft through
+        return draft_answer
 
     # ------------------------------------------------------------------
     # Tool call processing
@@ -476,7 +585,13 @@ class AgentPlanner:
                     "output": tc_result.output,
                     "error": tc_result.error,
                 })
-                content = content[match.end():]
+                # Replace the TOOL_CALL marker with the tool's actual output so
+                # the content that preceded the call is preserved and the result
+                # is inline where the model requested it.
+                tool_output_text = (
+                    f"\n[Tool: {tc_spec['tool_id']}]\n{tc_result.output or tc_result.error or ''}\n"
+                )
+                content = content[: match.start()] + tool_output_text + content[match.end():]
                 calls_left -= 1
             except Exception as exc:
                 logger.error("agent_tool_call_parse_error", error=str(exc))
@@ -490,10 +605,17 @@ class AgentPlanner:
 
     @staticmethod
     def _format_evidence(items: list[EvidenceItem]) -> str:
+        """
+        Format evidence items for inclusion in a prompt.
+
+        Each passage is labelled with its source document and page so the model
+        can cite it by number.  The label clearly identifies these as passages
+        extracted from uploaded source documents, not as independent facts.
+        """
         parts = []
         for i, item in enumerate(items, start=1):
             parts.append(
-                f"[{i}] Source: {item.source_path} | Page {item.page} | Score {item.score:.3f}\n"
+                f"[{i}] Document: \"{item.source_path}\" | Page {item.page}\n"
                 f"{item.text}"
             )
         return "\n\n".join(parts)
