@@ -1,5 +1,4 @@
-# Team Name: 
-## NovaMindd
+# NovaMindd : SovereignAI
 
 > **A sovereign, local-first AI execution platform for confidential industrial workflows.**
 
