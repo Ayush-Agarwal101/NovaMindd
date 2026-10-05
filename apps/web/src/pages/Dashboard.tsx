@@ -1,20 +1,30 @@
 import { useEffect, useState } from 'react'
-import { getHealth, listModels } from '../api/client'
+import { listModels } from '../api/client'
 import type { ModelStatus } from '../api/client'
 import { S, StatCard, Badge, Spinner, ErrorBanner, SectionHeader } from '../components/ui'
 import { CheckCircle2, XCircle, Cpu, Database, Shield } from 'lucide-react'
 
 export default function Dashboard() {
-  const [health, setHealth] = useState<{ status: string } | null>(null)
   const [models, setModels] = useState<ModelStatus[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [h, m] = await Promise.all([getHealth(), listModels()])
-        setHealth(h)
+        const m = await listModels()
         setModels(m)
       } catch {
         setError('Could not reach NovaMindd API. Is the server running?')
@@ -29,7 +39,6 @@ export default function Dashboard() {
 
   const loaded = models.filter(m => m.is_loaded).length
   const total = models.length
-  const isOnline = health?.status === 'ok'
 
   return (
     <div>
@@ -63,15 +72,15 @@ export default function Dashboard() {
             }}
           >
             {isOnline ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-            {isOnline ? 'NovaMindd API is online' : 'API offline — check the server'}
+            {isOnline ? 'Internet connection is active' : 'No internet connection'}
           </div>
 
           {/* Stat grid */}
           <div style={S.grid3}>
             <StatCard
-              label="API Status"
-              value={isOnline ? 'Online' : 'Offline'}
-              sub="Last checked just now"
+              label="Internet"
+              value={isOnline ? 'Connected' : 'Disconnected'}
+              sub="Current network status"
               accent={isOnline}
             />
             <StatCard
